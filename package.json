@@ -14,9 +14,9 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "reddit",
     "streamable-http",
-    "typescript"
+    "typescript",
+    "minimal"
   ],
   "author": "",
   "license": "MIT",

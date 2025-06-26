@@ -1,12 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { RedditClient } from "./client.js";
-/**
- * Sets up Reddit tools for fetching posts, comments, and user data
- */
 export function setupRedditTools(server: McpServer): void {
   const redditClient = new RedditClient();
-  // Tool: Get subreddit posts
   server.registerTool(
     "get_subreddit_posts",
     {
@@ -47,7 +43,6 @@ export function setupRedditTools(server: McpServer): void {
       }
     }
   );
-  // Tool: Get post comments
   server.registerTool(
     "get_post_comments",
     {
@@ -86,7 +81,6 @@ export function setupRedditTools(server: McpServer): void {
       }
     }
   );
-  // Tool: Get user posts
   server.registerTool(
     "get_user_posts",
     {
@@ -126,7 +120,6 @@ export function setupRedditTools(server: McpServer): void {
       }
     }
   );
-  // Tool: Search posts
   server.registerTool(
     "search_posts",
     {

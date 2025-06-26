@@ -1,8 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { RedditClient } from "./client.js";
-/**
- * Sets up Reddit resource for subreddit information
- */
 export function setupRedditResource(server: McpServer): void {
   const redditClient = new RedditClient();
   server.registerResource(

@@ -16,7 +16,7 @@
     "model-context-protocol",
     "streamable-http",
     "typescript",
-    "minimal"
+    "reddit"
   ],
   "author": "",
   "license": "MIT",

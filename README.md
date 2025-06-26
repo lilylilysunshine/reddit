@@ -1,1 +1,1 @@
-# reddit
+# reddit MCP Server

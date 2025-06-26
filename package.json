@@ -1,13 +1,13 @@
 {
   "name": "typescript-minimal-mcp",
   "version": "1.0.0",
-  "description": "Minimal MCP Server with Streamable HTTP Transport",
+  "description": "Reddit MCP Server with Streamable HTTP Transport",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "npm run build && node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "clean": "rm -rf dist"
   },
@@ -16,7 +16,7 @@
     "model-context-protocol",
     "streamable-http",
     "typescript",
-    "minimal"
+    "reddit"
   ],
   "author": "",
   "license": "MIT",
@@ -25,14 +25,13 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "qrcode": "^1.5.3",
-    "zod": "^3.25.67"
+    "zod": "^3.25.67",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.3",
-    "@types/qrcode": "^1.5.5",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }

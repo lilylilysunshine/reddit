@@ -1,15 +1,14 @@
-import { z } from "zod";
-// Reddit API response types
+import fetch from 'node-fetch';
 export interface RedditPost {
   id: string;
   title: string;
   author: string;
-  subreddit: string;
-  url: string;
-  selftext: string;
   score: number;
   num_comments: number;
   created_utc: number;
+  subreddit: string;
+  selftext: string;
+  url: string;
   permalink: string;
 }
 export interface RedditComment {
@@ -27,96 +26,101 @@ export interface SubredditInfo {
   subscribers: number;
   active_user_count: number;
   created_utc: number;
+  public_description: string;
 }
 export class RedditClient {
   private baseUrl = 'https://www.reddit.com';
-  private userAgent = 'MCP-Reddit-Server/1.0.0';
-  private async fetchFromReddit(endpoint: string): Promise<any> {
+  private userAgent: string;
+  constructor() {
+    this.userAgent = process.env.REDDIT_USER_AGENT || 'RedditMCP/1.0.0';
+  }
+  private async makeRequest(endpoint: string): Promise<any> {
     const url = `${this.baseUrl}${endpoint}.json`;
     
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': this.userAgent,
-          'Accept': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`Reddit API error: ${response.status} ${response.statusText}`);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': this.userAgent
       }
-      return await response.json();
-    } catch (error) {
-      throw new Error(`Failed to fetch from Reddit: ${error.message}`);
+    });
+    if (!response.ok) {
+      throw new Error(`Reddit API error: ${response.status} ${response.statusText}`);
     }
+    return await response.json();
+  }
+  async searchPosts(query: string, subreddit?: string, sort: string = 'relevance', limit: number = 25): Promise<RedditPost[]> {
+    const subredditPath = subreddit ? `/r/${subreddit}` : '';
+    const endpoint = `${subredditPath}/search?q=${encodeURIComponent(query)}&sort=${sort}&limit=${limit}&restrict_sr=${!!subreddit}`;
+    
+    const data = await this.makeRequest(endpoint);
+    return data.data.children.map((child: any) => this.formatPost(child.data));
   }
   async getSubredditPosts(subreddit: string, sort: string = 'hot', limit: number = 25): Promise<RedditPost[]> {
-    const endpoint = `/r/${subreddit}/${sort}`;
-    const data = await this.fetchFromReddit(`${endpoint}?limit=${limit}`);
+    const endpoint = `/r/${subreddit}/${sort}?limit=${limit}`;
     
-    return data.data.children.map((child: any) => ({
-      id: child.data.id,
-      title: child.data.title,
-      author: child.data.author,
-      subreddit: child.data.subreddit,
-      url: child.data.url,
-      selftext: child.data.selftext,
-      score: child.data.score,
-      num_comments: child.data.num_comments,
-      created_utc: child.data.created_utc,
-      permalink: child.data.permalink
-    }));
-  }
-  async getPostComments(subreddit: string, postId: string, limit: number = 50): Promise<RedditComment[]> {
-    const endpoint = `/r/${subreddit}/comments/${postId}`;
-    const data = await this.fetchFromReddit(`${endpoint}?limit=${limit}`);
-    
-    if (data.length < 2) return [];
-    
-    return this.parseComments(data[1].data.children);
-  }
-  private parseComments(children: any[]): RedditComment[] {
-    return children
-      .filter(child => child.kind === 't1')
-      .map(child => ({
-        id: child.data.id,
-        author: child.data.author,
-        body: child.data.body,
-        score: child.data.score,
-        created_utc: child.data.created_utc,
-        replies: child.data.replies?.data?.children ? 
-          this.parseComments(child.data.replies.data.children) : undefined
-      }));
+    const data = await this.makeRequest(endpoint);
+    return data.data.children.map((child: any) => this.formatPost(child.data));
   }
   async getSubredditInfo(subreddit: string): Promise<SubredditInfo> {
     const endpoint = `/r/${subreddit}/about`;
-    const data = await this.fetchFromReddit(endpoint);
     
-    return {
-      display_name: data.data.display_name,
-      title: data.data.title,
-      description: data.data.description,
-      subscribers: data.data.subscribers,
-      active_user_count: data.data.active_user_count,
-      created_utc: data.data.created_utc
-    };
+    const data = await this.makeRequest(endpoint);
+    return this.formatSubredditInfo(data.data);
   }
   async getUserPosts(username: string, sort: string = 'new', limit: number = 25): Promise<RedditPost[]> {
-    const endpoint = `/u/${username}/submitted`;
-    const data = await this.fetchFromReddit(`${endpoint}?sort=${sort}&limit=${limit}`);
+    const endpoint = `/user/${username}/submitted?sort=${sort}&limit=${limit}`;
     
-    return data.data.children
-      .filter((child: any) => child.kind === 't3')
-      .map((child: any) => ({
-        id: child.data.id,
-        title: child.data.title,
-        author: child.data.author,
-        subreddit: child.data.subreddit,
-        url: child.data.url,
-        selftext: child.data.selftext,
-        score: child.data.score,
-        num_comments: child.data.num_comments,
-        created_utc: child.data.created_utc,
-        permalink: child.data.permalink
-      }));
+    const data = await this.makeRequest(endpoint);
+    return data.data.children.map((child: any) => this.formatPost(child.data));
+  }
+  async getPostComments(subreddit: string, postId: string, sort: string = 'best'): Promise<{ post: RedditPost; comments: RedditComment[] }> {
+    const endpoint = `/r/${subreddit}/comments/${postId}?sort=${sort}`;
+    
+    const data = await this.makeRequest(endpoint);
+    const post = this.formatPost(data[0].data.children[0].data);
+    const comments = this.formatComments(data[1].data.children);
+    return { post, comments };
+  }
+  private formatPost(data: any): RedditPost {
+    return {
+      id: data.id,
+      title: data.title,
+      author: data.author,
+      score: data.score,
+      num_comments: data.num_comments,
+      created_utc: data.created_utc,
+      subreddit: data.subreddit,
+      selftext: data.selftext || '',
+      url: data.url,
+      permalink: `https://reddit.com${data.permalink}`
+    };
+  }
+  private formatSubredditInfo(data: any): SubredditInfo {
+    return {
+      display_name: data.display_name,
+      title: data.title,
+      description: data.description,
+      subscribers: data.subscribers,
+      active_user_count: data.active_user_count || 0,
+      created_utc: data.created_utc,
+      public_description: data.public_description
+    };
+  }
+  private formatComments(children: any[]): RedditComment[] {
+    return children
+      .filter(child => child.kind === 't1')
+      .map(child => this.formatComment(child.data));
+  }
+  private formatComment(data: any): RedditComment {
+    const comment: RedditComment = {
+      id: data.id,
+      author: data.author,
+      body: data.body,
+      score: data.score,
+      created_utc: data.created_utc
+    };
+    if (data.replies && data.replies.data && data.replies.data.children) {
+      comment.replies = this.formatComments(data.replies.data.children);
+    }
+    return comment;
   }
 }

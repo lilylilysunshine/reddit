@@ -56,6 +56,7 @@ app.post('/mcp', async (req: Request, res: Response) => {
     // Handle the request
     await transport.handleRequest(req, res, req.body);
   } catch (error) {
+    console.error('❌ Error handling MCP request:', error);
     if (!res.headersSent) {
       res.status(500).json({
         jsonrpc: '2.0',

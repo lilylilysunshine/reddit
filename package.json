@@ -1,5 +1,5 @@
 {
-  "name": "reddit-mcp-server",
+  "name": "typescript-minimal-mcp",
   "version": "1.0.0",
   "description": "Reddit MCP Server with Streamable HTTP Transport",
   "main": "dist/server.js",
@@ -14,9 +14,9 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "reddit",
     "streamable-http",
-    "typescript"
+    "typescript",
+    "reddit"
   ],
   "author": "",
   "license": "MIT",
@@ -25,7 +25,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "zod": "^3.25.67"
+    "zod": "^3.25.67",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

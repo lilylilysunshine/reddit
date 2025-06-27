@@ -6,33 +6,43 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { createMCPServer } from "./mcp-server.js";
 import type { Request, Response } from "express";
+// Load environment variables
 dotenv.config();
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000");
+// Middleware
 app.use(cors());
 app.use(express.json());
+// Transport storage for session management
 const transports: Record<string, StreamableHTTPServerTransport> = {};
+// MCP endpoint handler
 app.post('/mcp', async (req: Request, res: Response) => {
   const sessionId = req.headers['mcp-session-id'] as string | undefined;
   let transport: StreamableHTTPServerTransport;
   try {
     if (sessionId && transports[sessionId]) {
+      // Reuse existing transport for the session
       transport = transports[sessionId];
     } else if (!sessionId && isInitializeRequest(req.body)) {
+      // Create new transport for initialization request
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (newSessionId) => {
+          // Store the transport by session ID
           transports[newSessionId] = transport;
         }
       });
+      // Cleanup on transport close
       transport.onclose = () => {
         if (transport.sessionId) {
           delete transports[transport.sessionId];
         }
       };
+      // Create and connect MCP server
       const server = createMCPServer();
       await server.connect(transport);
     } else {
+      // Invalid request
       res.status(400).json({
         jsonrpc: '2.0',
         error: {
@@ -43,6 +53,7 @@ app.post('/mcp', async (req: Request, res: Response) => {
       });
       return;
     }
+    // Handle the request
     await transport.handleRequest(req, res, req.body);
   } catch (error) {
     if (!res.headersSent) {
@@ -57,6 +68,7 @@ app.post('/mcp', async (req: Request, res: Response) => {
     }
   }
 });
+// Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
   res.json({ 
     status: 'ok', 
@@ -65,6 +77,7 @@ app.get('/health', (req: Request, res: Response) => {
     timestamp: new Date().toISOString()
   });
 });
+// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Reddit MCP Server running on port ${PORT}`);
   console.log(`📡 MCP endpoint: http://localhost:${PORT}/mcp`);

@@ -7,16 +7,16 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "npm run build && node dist/server.js",
+    "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "clean": "rm -rf dist"
   },
   "keywords": [
     "mcp",
     "model-context-protocol",
+    "reddit",
     "streamable-http",
-    "typescript",
-    "reddit"
+    "typescript"
   ],
   "author": "",
   "license": "MIT",
@@ -25,8 +25,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "zod": "^3.25.67",
-    "node-fetch": "^3.3.2"
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
